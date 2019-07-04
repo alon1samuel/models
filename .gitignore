@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+venv/*
+slim_work/data/*
+slim_work/training_output/*
+
 # C extensions
 *.so
 

@@ -84,10 +84,19 @@ tf.app.flags.DEFINE_float(
     'If left as None, then moving averages are not used.')
 
 tf.app.flags.DEFINE_integer(
-    'eval_image_size', None, 'Eval image size')
+    'eval_image_height', None, 'Eval image height')
+
+tf.app.flags.DEFINE_integer(
+    'eval_image_width', None, 'Eval image width')
 
 tf.app.flags.DEFINE_bool(
     'quantize', False, 'whether to use quantized graph or not.')
+
+tf.app.flags.DEFINE_integer(
+    'output_stride', None, 'Maximum stride from output to input.')
+
+tf.app.flags.DEFINE_string(
+    'last_layer', None, 'Last layer name. If None then the last layer is layer_20')
 
 
 tf.app.flags.DEFINE_float('gpu_usage_fraction', 0.6, 'How much gpu to allocate for usage. If 0 then using cpu')
@@ -136,9 +145,10 @@ def main(_):
         preprocessing_name,
         is_training=False)
 
-    eval_image_size = FLAGS.eval_image_size or network_fn.default_image_size
+    eval_image_height = FLAGS.eval_image_height or network_fn.default_image_size
+    eval_image_width = FLAGS.eval_image_width or network_fn.default_image_size
 
-    image = image_preprocessing_fn(image, eval_image_size, eval_image_size)
+    image = image_preprocessing_fn(image, eval_image_height, eval_image_width)
 
     images, labels = tf.train.batch(
         [image, label],
@@ -149,7 +159,8 @@ def main(_):
     ####################
     # Define the model #
     ####################
-    logits, _ = network_fn(images)
+    logits, _ = network_fn(images, **{'output_stride': FLAGS.output_stride,
+                                      'final_endpoint': FLAGS.last_layer})
 
     if FLAGS.quantize:
       tf.contrib.quantize.create_eval_graph()

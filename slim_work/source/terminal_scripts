@@ -1,0 +1,26 @@
+DATA_DIR=/media/alon/hdd/models/slim/data/flowers
+python research/slim/download_and_convert_data.py \
+    --dataset_name=flowers \
+    --dataset_dir="${DATA_DIR}"
+
+
+DATA_DIR=/media/alon/hdd/models/slim_work/data/flowers
+TRAIN_DIR=/media/alon/hdd/models/slim_work/training_output/flowers
+python train_image_classifier.py
+--train_dir=${TRAIN_DIR}
+--dataset_name=flowers
+--dataset_split_name=train
+--dataset_dir=${DATASET_DIR}
+--model_name=mobilenet_v2
+
+
+
+--train_dir=/media/alon/hdd/models/slim_work/training_output/flowers
+--dataset_name=flowers
+--dataset_split_name=train
+--dataset_dir=/media/alon/hdd/models/slim_work/data/flowers
+--model_name=mobilenet_v2
+
+
+# IMAGE_SIZE_HEIGHT = 212
+# IMAGE_SIZE_WIDTH = 110

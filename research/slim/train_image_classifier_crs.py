@@ -26,7 +26,8 @@ from nets import nets_factory
 from preprocessing import preprocessing_factory
 from tensorflow.python.training import saver as tf_saver
 
-slim = tf.contrib.slim
+# slim = tf.contrib.slim
+import tensorflow.contrib.slim as slim
 
 tf.app.flags.DEFINE_string(
     'master', '', 'The address of the TensorFlow master to use.')
@@ -76,6 +77,15 @@ tf.app.flags.DEFINE_integer(
 
 tf.app.flags.DEFINE_float(
     'gpu_memory_usage', 0.4, 'Percentage of memory usage in gpu')
+
+tf.app.flags.DEFINE_integer(
+    'output_stride', None, 'Maximum stride from output to input.')
+
+tf.app.flags.DEFINE_string(
+    'last_layer', None, 'Last layer name. If None then the last layer is layer_20')
+
+
+
 
 ######################
 # Optimization Flags #
@@ -205,7 +215,10 @@ tf.app.flags.DEFINE_integer(
     'batch_size', 32, 'The number of samples in each batch.')
 
 tf.app.flags.DEFINE_integer(
-    'train_image_size', None, 'Train image size')
+    'image_height', None, 'Train image height')
+
+tf.app.flags.DEFINE_integer(
+    'image_width', None, 'Train image width')
 
 tf.app.flags.DEFINE_integer('max_number_of_steps', None,
                             'The maximum number of training steps.')
@@ -455,9 +468,10 @@ def main(_):
       [image, label] = provider.get(['image', 'label'])
       label -= FLAGS.labels_offset
 
-      train_image_size = FLAGS.train_image_size or network_fn.default_image_size
+      train_image_height = FLAGS.image_height or network_fn.default_image_size
+      train_image_width = FLAGS.image_width or network_fn.default_image_size
 
-      image = image_preprocessing_fn(image, train_image_size, train_image_size)
+      image = image_preprocessing_fn(image, train_image_height, train_image_width)
 
       images, labels = tf.train.batch(
           [image, label],
@@ -469,13 +483,15 @@ def main(_):
       batch_queue = slim.prefetch_queue.prefetch_queue(
           [images, labels], capacity=2 * deploy_config.num_clones)
 
+
     ####################
     # Define the model #
     ####################
     def clone_fn(batch_queue):
       """Allows data parallelism by creating multiple clones of network_fn."""
       images, labels = batch_queue.dequeue()
-      logits, end_points = network_fn(images)
+      logits, end_points = network_fn(images, **{'output_stride': FLAGS.output_stride,
+                                                 'final_endpoint': FLAGS.last_layer})
 
       #############################
       # Specify the loss function #
